@@ -12,8 +12,9 @@ Let's try to build it.
       * [First steps](#first-steps)
       * [Manually fixing the rpath (dynamic linker search path)](#manually-fixing-the-rpath-dynamic-linker-search-path)
       * [A newer Rust](#a-newer-rust)
+      * [Cleanup](#cleanup)
 
-<!-- Added by: giuliano, at: Tue 02 Jun 2020 10:50:42 PM BST -->
+<!-- Added by: giuliano, at: Tue 02 Jun 2020 11:12:19 PM BST -->
 
 <!--te-->
 
@@ -255,3 +256,47 @@ $ patchelf --print-rpath starship | tr ':' '\n' | sort
 /gnu/store/rykm237xkmq7rl1p0nwass01p090p88x-zlib-1.2.11/lib
 /home/giuliano/.guix-profile/lib
 ```
+
+## Cleanup
+
+Now that we no longer need the `~/temp/build-starship` profile, let's remove it. Running `guix gc` gets rid of the newer Rust we've built (it removes it from the store).
+
+```
+$ rm ~/temp/build-starship
+$ guix gc
+$ ll /gnu/store/58rizji545xlfg1xzzga3qifh75yy2qj-rust-1.40.0
+total 12
+dr-xr-xr-x 4 root root 4096 Jun  2 22:07 share/
+dr-xr-xr-x 3 root root 4096 Jun  2 22:07 lib/
+dr-xr-xr-x 2 root root 4096 Jun  2 22:07 bin/
+$
+```
+
+Wait, Rust is still in the store?
+
+That's because I've deleted the current `~/temp/build-starship` profile, but left the older generations around:
+
+```
+$ ls -1d ~/temp/build-starship*
+/home/giuliano/temp/build-starship-1-link
+/home/giuliano/temp/build-starship-2-link
+/home/giuliano/temp/build-starship-3-link
+/home/giuliano/temp/build-starship-4-link
+/home/giuliano/temp/build-starship-5-link
+/home/giuliano/temp/build-starship.lock
+```
+
+So try again by removing all the links (but leaving the `.lock` file untouched, I don't know what it is).
+
+```
+$ rm ~/temp/build-starship*link
+$ ls -1d ~/temp/build-starship*
+/home/giuliano/temp/build-starship.lock
+$ guix gc
+finding garbage collector roots...
+[..]
+$ ll /gnu/store/58rizji545xlfg1xzzga3qifh75yy2qj-rust-1.40.0
+ls: cannot access '/gnu/store/58rizji545xlfg1xzzga3qifh75yy2qj-rust-1.40.0': No such file or directory
+```
+
+All gone.
