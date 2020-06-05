@@ -10,9 +10,9 @@
   (guix profiles)
   (guix packages)
   (srfi srfi-1))
- 
+
 (use-service-modules base ssh desktop dbus docker)
-(use-package-modules screen vim certs)
+(use-package-modules screen vim certs bash)
 
 (define dummy-networking-service-type
   (shepherd-service-type
@@ -97,7 +97,12 @@
                   (syslog-service)
                   (service elogind-service-type)
                   (service dbus-root-service-type)
-		  (service docker-service-type)))))
+		  (service docker-service-type)
+                  (service special-files-service-type
+                         `(("/bin/sh" ,(file-append bash "/bin/sh"))
+                           ("/bin/bash" ,(file-append bash "/bin/bash"))
+                           ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))))))
+
 
 ; Hackish way to avoid building/including linux-module-database in the system,
 
