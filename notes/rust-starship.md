@@ -112,6 +112,8 @@ code on  HEAD (0dfe3f7) is 📦 v0.41.3 via 🦀 v1.40.0
 
 ## Manually fixing the `rpath` (dynamic linker search path)
 
+_Update_: I wrote this section before discovering [nonguix](https://gitlab.com/nonguix/nonguix/). Its `binary-build-system` automates the patchelf gymnastics described below in a safe and reproducible way. I've used it for the first time to package `babashka` (some notes about that [here](babashka.md)).
+
 Of course, trying to run `starship` outside of the Docker container yields an error:
 
 ```
