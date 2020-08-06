@@ -163,7 +163,7 @@
        ("zlib" ,zlib)))
     (synopsis "Oracle Java development kit")
     (description "This package provides the Java development kit Oracle JDK.")
-    (home-page "https://github.com/borkdude/oracle-jdk")
+    (home-page "https://www.oracle.com/java/technologies/javase-downloads.html")
     (license (make-license "Oracle Technology Network License Agreement for Oracle Java SE"
                            "https://www.oracle.com/downloads/licenses/javase-license1.html"
                            ""))))
