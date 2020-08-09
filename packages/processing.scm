@@ -109,7 +109,7 @@
 
          ;; Fix binaries that included, before the patchelf phase, $ORIGIN in their rpath.
          (add-before 'validate-runpath 'fix-runpath
-           (lambda _
+           (lambda* (#:key inputs #:allow-other-keys)
              (use-modules (ice-9 popen))
              (use-modules (ice-9 rdelim))
              (use-modules (ice-9 regex))
@@ -149,6 +149,9 @@
                                      fixed-runpath
                                      (string-append %out "/" binary))))
                          rpath-origin-components)
+               ; if java/bin/java was part of the patchelf-plan, manual --set-interpreter would not be necessary
+               (let ((interpreter (car (find-files (assoc-ref inputs "libc") "ld-linux.*\\.so"))))
+                 (invoke "patchelf" "--set-interpreter" interpreter (string-append %out "/java/bin/java")))
                (delete-file (string-append out "/rpath-origin-components.scm")))
              #t)))))
     (inputs
