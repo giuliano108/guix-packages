@@ -71,8 +71,7 @@
                 (list 'firmware 'linux-bare-metal)))
       (operating-system-default-essential-services this-operating-system)))
 
-  (services (list (service guix-service-type)
-                  (service nscd-service-type)))))
+  (services (list (service guix-service-type)))))
 
 ; Hackish way to avoid building/including linux-module-database in the system,
 

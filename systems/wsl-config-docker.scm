@@ -92,7 +92,6 @@
       (operating-system-default-essential-services this-operating-system)))
 
   (services (list (service guix-service-type)
-                  (service nscd-service-type)
                   (service dummy-networking-service-type)
                   (syslog-service)
                   (service elogind-service-type)
