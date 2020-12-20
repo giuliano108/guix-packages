@@ -445,6 +445,8 @@ init─┬─init───init───busybox─┬─pstree
 
 ### Can only run one "wsl -d guix" terminal at a time
 
+EDIT: stopping `nscd` works around this issue, see https://github.com/giuliano108/guix-packages/issues/4 .
+
 I don't know why but, after `shepherd` is started with the recipe above, you can't open another "terminal" (I mean: open `cmd.exe`, run `wsl -d guix --exec /busybox sh `. The `wsl` command returns immediately back to prompt. `dmesg` contains:
 
 ```
