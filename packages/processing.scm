@@ -1,3 +1,5 @@
+(add-to-load-path "..")
+
 (define-module (processing)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix packages)
@@ -12,7 +14,8 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages fontutils)
   #:use-module (gnu packages xorg)
-  #:use-module (nonguix build-system binary))
+  #:use-module (nonguix build-system binary)
+  #:use-module (giuliano108 utils))
 
 
 (define make-license (@@ (guix licenses) license))
@@ -29,8 +32,12 @@
                 "0nq2wdfi2kpswf6smi9n4nys9l57gb58knp49wwgrimkkl34bm6y"))))
     (build-system binary-build-system)
     (supported-systems '("x86_64-linux"))
+    (native-inputs
+     `(("unzip" ,unzip)))
     (arguments
-     `(#:patchelf-plan
+     `(#:imported-modules ((giuliano108 utils)
+                           ,@%binary-build-system-modules)
+       #:patchelf-plan
        `(("java/lib/amd64/libjsoundalsa.so"
           ("alsa-lib"))
          ("modes/java/libraries/serial/library/linux64/libjSSC-2.8.so"
@@ -76,6 +83,15 @@
        #:phases
        (modify-phases %standard-phases
 
+         (add-after 'unpack 'unpack-native-libraries-jars
+           (lambda _
+             (let* ((out (assoc-ref %outputs "out"))
+                    (jar-dir "core/library")
+                    (jar-name "jogl-all-natives-linux-amd64.jar")
+                    (jar-path (string-append "core/library/" jar-name))
+                    (unpacked-jar-dir (string-append "guix-" jar-name)))
+               (invoke "unzip" "-d" unpacked-jar-dir "-x" jar-path))))
+
          ;; Find all the binaries that include $ORIGIN in their rpath.
          ;; Save the results to /rpath-origin-components.scm for later use.
          (add-before 'patchelf 'collect-rpath-origin-components
@@ -85,6 +101,7 @@
              (use-modules (ice-9 regex))
              (use-modules (ice-9 pretty-print))
              (use-modules (srfi srfi-1))
+             (use-modules (giuliano108 utils))
 
              (define (get-runpath binary)
                (read-line (open-pipe (string-append "patchelf --print-rpath " binary) OPEN_READ)))
