@@ -33,7 +33,8 @@
     (build-system binary-build-system)
     (supported-systems '("x86_64-linux"))
     (native-inputs
-     `(("unzip" ,unzip)))
+     `(("unzip" ,unzip)
+       ("zip" ,zip)))
     (arguments
      `(#:imported-modules ((giuliano108 utils)
                            ,@%binary-build-system-modules)
@@ -77,7 +78,18 @@
          ("java/lib/amd64/libfontmanager.so"
           ("gcc:lib"))
          ("java/lib/amd64/libunpack.so"
-          ("gcc:lib")))
+          ("gcc:lib"))
+
+         ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libnativewindow_x11.so"
+          ("libx11" "libxxf86vm" "libxrender"))
+         ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libjogl_mobile.so"
+          ("libx11"))
+         ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libjogl_desktop.so"
+          ("libx11"))
+         ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libnativewindow_awt.so"
+          ("libx11" "libxxf86vm" "libxrender"))
+         ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libnewt.so"
+          ("libx11" "libxcursor" "libxrandr")))
        #:install-plan
        `(("." ,(string-append "share/" ,name "-" ,version)))
        #:phases
@@ -90,7 +102,7 @@
                     (jar-name "jogl-all-natives-linux-amd64.jar")
                     (jar-path (string-append "core/library/" jar-name))
                     (unpacked-jar-dir (string-append "guix-" jar-name)))
-               (invoke "unzip" "-d" unpacked-jar-dir "-x" jar-path))))
+               (invoke "unzip" "-d" unpacked-jar-dir jar-path))))
 
          ;; Find all the binaries that include $ORIGIN in their rpath.
          ;; Save the results to /rpath-origin-components.scm for later use.
@@ -170,7 +182,13 @@
                (let ((interpreter (car (find-files (assoc-ref inputs "libc") "ld-linux.*\\.so"))))
                  (invoke "patchelf" "--set-interpreter" interpreter (string-append %out "/java/bin/java")))
                (delete-file (string-append out "/rpath-origin-components.scm")))
-             #t)))))
+             #t))
+
+         (add-after 'fix-runpath 'unpack-native-libraries-jars
+           (lambda _
+             (define %out (string-append (assoc-ref %outputs "out") "/share/" ,name "-" ,version))
+             (with-directory-excursion "guix-jogl-all-natives-linux-amd64.jar"
+               (invoke "zip"  "-r" (string-append %out "/jogl-all-natives-linux-amd64.jar") ".")))))))
     (inputs
      `(("libstdc++" ,(make-libstdc++ gcc))
        ("gcc:lib" ,gcc "lib")

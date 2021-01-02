@@ -55,4 +55,51 @@ nonguix on master ❯ find /gnu/store/2f9z9v2ibix5hp51w7qwgpkhhsiyj6xc-module-im
 /gnu/store/2f9z9v2ibix5hp51w7qwgpkhhsiyj6xc-module-import/nonguix/build/binary-build-system.scm
 /gnu/store/2f9z9v2ibix5hp51w7qwgpkhhsiyj6xc-module-import/nonguix/build/utils.scm
 nonguix on master ❯
+
+find . -type f \( -executable -or -name '*.so' \) | xargs ldd 2>/dev/null
+./natives/linux-amd64/libnativewindow_x11.so:
+        linux-vdso.so.1 (0x00007ffd9d947000)
+        libX11.so.6 => not found
+        libXxf86vm.so.1 => not found
+        libXrender.so.1 => not found
+./natives/linux-amd64/libjogl_mobile.so:
+        linux-vdso.so.1 (0x00007ffef8f0b000)
+        libX11.so.6 => not found
+./natives/linux-amd64/libjogl_desktop.so:
+        linux-vdso.so.1 (0x00007fff4fc7b000)
+        libX11.so.6 => not found
+./natives/linux-amd64/libnativewindow_awt.so:
+        linux-vdso.so.1 (0x00007ffedbfec000)
+        libX11.so.6 => not found
+        libXxf86vm.so.1 => not found
+        libXrender.so.1 => not found
+        libjawt.so => not found
+./natives/linux-amd64/libnewt.so:
+        linux-vdso.so.1 (0x00007fff5391d000)
+        libX11.so.6 => not found
+        libXrandr.so.2 => not found
+        libXcursor.so.1 => not found
+```
+
+```
+java.lang.RuntimeException: java.lang.ClassNotFoundException: Failed to find NEWT Display Class <.x11.DisplayDriver>
+        at jogamp.newt.DisplayImpl.create(DisplayImpl.java:314)
+        at com.jogamp.newt.NewtFactory.createDisplay(NewtFactory.java:167)
+        at com.jogamp.newt.NewtFactory.createDisplay(NewtFactory.java:149)
+        at processing.opengl.PSurfaceJOGL.initDisplay(PSurfaceJOGL.java:149)
+        at processing.opengl.PSurfaceJOGL.initFrame(PSurfaceJOGL.java:135)
+        at processing.core.PApplet.initSurface(PApplet.java:11035)
+        at processing.core.PApplet.runSketch(PApplet.java:10922)
+        at processing.core.PApplet.main(PApplet.java:10620)
+Caused by: java.lang.ClassNotFoundException: Failed to find NEWT Display Class <.x11.DisplayDriver>
+        at jogamp.newt.DisplayImpl.getDisplayClass(DisplayImpl.java:277)
+        at jogamp.newt.DisplayImpl.create(DisplayImpl.java:285)
+        ... 7 more
+RuntimeException: java.lang.ClassNotFoundException: Failed to find NEWT Display Class <.x11.DisplayDriver>
+```
+
+
+```
+libxcursor
+libxrandr
 ```
