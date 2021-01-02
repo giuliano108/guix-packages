@@ -186,9 +186,13 @@
 
          (add-after 'fix-runpath 'unpack-native-libraries-jars
            (lambda _
-             (define %out (string-append (assoc-ref %outputs "out") "/share/" ,name "-" ,version))
-             (with-directory-excursion "guix-jogl-all-natives-linux-amd64.jar"
-               (invoke "zip"  "-r" (string-append %out "/jogl-all-natives-linux-amd64.jar") ".")))))))
+             (let* ((out-base (assoc-ref %outputs "out"))
+                    (out (string-append (assoc-ref %outputs "out") "/share/" ,name "-" ,version)))
+               (with-directory-excursion "guix-jogl-all-natives-linux-amd64.jar"
+                 (invoke "zip"  "-r" (string-append out "/jogl-all-natives-linux-amd64.jar") "."))
+               (rename-file (string-append out "/jogl-all-natives-linux-amd64.jar")
+                            (string-append out "/core/library/jogl-all-natives-linux-amd64.jar"))))))))
+
     (inputs
      `(("libstdc++" ,(make-libstdc++ gcc))
        ("gcc:lib" ,gcc "lib")
@@ -202,8 +206,10 @@
        ("glib" ,glib)
        ("gtk+" ,gtk+)
        ("libx11" ,libx11)
+       ("libxcursor" ,libxcursor)
        ("libxext" ,libxext)
        ("libxi" ,libxi)
+       ("libxrandr" ,libxrandr)
        ("libxrender" ,libxrender)
        ("libxtst" ,libxtst)
        ("libxxf86vm" ,libxxf86vm)
