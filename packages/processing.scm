@@ -132,15 +132,22 @@
              #t))
 
          (add-after 'fix-runpath 'put-fixed-native-libraries-jars-in-place
-           (lambda* (#:key inputs outputs #:allow-other-keys)
+           (lambda* (#:key outputs #:allow-other-keys)
              (let* ((out (assoc-ref outputs "out"))
                     (share (string-append out "/share/" ,name "-" ,version))
-                    (mesa-libs (string-append (assoc-ref inputs "mesa") "/lib"))
                     (jar-name "jogl-all-natives-linux-amd64.jar")
                     (unpacked-jar-dir (string-append "guix-" jar-name)))
                (with-directory-excursion unpacked-jar-dir
                  (invoke "zip" "-r" (string-append share "/core/library/" jar-name) "."))
-               (delete-file-recursively (string-append share "/" unpacked-jar-dir))
+               (delete-file-recursively (string-append share "/" unpacked-jar-dir)))
+             #t))
+
+         ;; libGL & friends are dlopen'ed at runtime so we need a wrapper script
+         (add-after 'fix-runpath 'create-wrapper
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+             (let* ((out (assoc-ref outputs "out"))
+                   (share (string-append out "/share/" ,name "-" ,version))
+                   (mesa-libs (string-append (assoc-ref inputs "mesa") "/lib")))
                (wrap-program (string-append share "/processing")
                  `("LD_LIBRARY_PATH" ":" prefix (,mesa-libs))))
              #t)))))
