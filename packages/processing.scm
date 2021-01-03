@@ -108,33 +108,12 @@
          ;; Find all the binaries that include $ORIGIN in their rpath.
          ;; Save the results to /rpath-origin-components.scm for later use.
          (add-before 'patchelf 'collect-rpath-origin-components
-           (lambda _
-             (use-modules (ice-9 popen))
-             (use-modules (ice-9 rdelim))
-             (use-modules (ice-9 regex))
-             (use-modules (ice-9 pretty-print))
-             (use-modules (srfi srfi-1))
+           (lambda* (#:key outputs #:allow-other-keys)
              (use-modules (giuliano108 utils))
 
-             (define (get-runpath binary)
-               (read-line (open-pipe (string-append "patchelf --print-rpath " binary) OPEN_READ)))
-
-             (let* ((out (assoc-ref %outputs "out"))
-                    (binaries-pattern ".*\\.so$")
-                    (binaries-to-fix (find-files "." binaries-pattern))
-                    (all-origin-components
-                     (remove
-                      (lambda (x) (null? (car (cdr x))))
-                      (map (lambda (binary)
-                             (let* ((input-runpath (get-runpath binary))
-                                    (input-runpath-components (string-split input-runpath #\:))
-                                    (input-origin-components (filter (lambda (x) (string-contains x "$ORIGIN"))
-                                                                     input-runpath-components)))
-                               (list binary input-origin-components)))
-                           binaries-to-fix))))
+             (let ((out (assoc-ref %outputs "out")))
                (mkdir out)
-               (call-with-output-file (string-append out "/rpath-origin-components.scm")
-                 (lambda (p) (pretty-print all-origin-components p))))
+               (collect-rpath-origin-components out))
              #t))
 
          ;; Fix binaries that included, before the patchelf phase, $ORIGIN in their rpath.
@@ -143,6 +122,7 @@
              (use-modules (ice-9 popen))
              (use-modules (ice-9 rdelim))
              (use-modules (ice-9 regex))
+             (use-modules (srfi srfi-1))
 
              (define %out (string-append (assoc-ref %outputs "out") "/share/" ,name "-" ,version))
 
