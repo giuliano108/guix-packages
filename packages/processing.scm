@@ -80,6 +80,8 @@
          ("java/lib/amd64/libunpack.so"
           ("gcc:lib"))
 
+         ("java/bin/java") ;; run this binary through `patchelf --set-interpreter'
+
          ;; a few libraries are packaged up in a .jar
          ;; we extract them to a temporary folder so that #:patchelf-plan can fix those too
          ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libnativewindow_x11.so"
@@ -120,43 +122,18 @@
 
          ;; Fix binaries that included, before the patchelf phase, $ORIGIN in their rpath.
          (add-before 'validate-runpath 'fix-runpath
-           (lambda* (#:key inputs outputs #:allow-other-keys)
-             (use-modules (ice-9 popen))
-             (use-modules (ice-9 rdelim))
-             (use-modules (ice-9 regex))
-             (use-modules (srfi srfi-1))
-
-             (define %out (string-append (assoc-ref outputs "out") "/share/" ,name "-" ,version))
+           (lambda* (#:key outputs #:allow-other-keys)
+             (use-modules (giuliano108 utils))
 
              (let* ((out (assoc-ref outputs "out"))
-                    (rpath-origin-components (read (open-file (string-append out "/rpath-origin-components.scm") "r"))))
-               (for-each (lambda (x)
-                           (let* ((binary (car x))
-                                  (output-file (string-append %out "/" binary))
-                                  (origin-components (car (cdr x)))
-                                  (current-runpath (get-runpath output-file))
-                                  (current-runpath-components
-                                   (remove
-                                    (lambda (x) (string-contains x "$ORIGIN"))
-                                    (string-split current-runpath #\:)))
-                                  (fixed-origin-components (map (lambda (x) (fix-origin %out binary x))
-                                                                origin-components))
-                                  (fixed-runpath (string-join
-                                                  (append fixed-origin-components
-                                                          current-runpath-components)
-                                                  ":")))
-                             (invoke "patchelf" "--set-rpath"
-                                     fixed-runpath
-                                     (string-append %out "/" binary))))
-                         rpath-origin-components)
-               ; if java/bin/java was part of the patchelf-plan, manual --set-interpreter would not be necessary
-               (let ((interpreter (car (find-files (assoc-ref inputs "libc") "ld-linux.*\\.so"))))
-                 (invoke "patchelf" "--set-interpreter" interpreter (string-append %out "/java/bin/java")))
+                   (share (string-append out "/share/" ,name "-" ,version)))
+               (fix-origin-based-rpaths out share)
                (delete-file (string-append out "/rpath-origin-components.scm")))
              #t))
 
          (add-after 'fix-runpath 'unpack-native-libraries-jars
            (lambda* (#:key inputs outputs #:allow-other-keys)
+             (use-modules (giuliano108 utils))
 
              (let* ((out-base (assoc-ref outputs "out"))
                     (out (string-append out-base "/share/" ,name "-" ,version))
