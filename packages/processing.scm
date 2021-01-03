@@ -131,19 +131,19 @@
                (delete-file (string-append out "/rpath-origin-components.scm")))
              #t))
 
-         (add-after 'fix-runpath 'unpack-native-libraries-jars
+         (add-after 'fix-runpath 'put-fixed-native-libraries-jars-in-place
            (lambda* (#:key inputs outputs #:allow-other-keys)
-             (use-modules (giuliano108 utils))
-
-             (let* ((out-base (assoc-ref outputs "out"))
-                    (out (string-append out-base "/share/" ,name "-" ,version))
-                    (mesa-libs (string-append (assoc-ref inputs "mesa") "/lib")))
-               (with-directory-excursion "guix-jogl-all-natives-linux-amd64.jar"
-                 (invoke "zip"  "-r" (string-append out "/jogl-all-natives-linux-amd64.jar") "."))
-               (rename-file (string-append out "/jogl-all-natives-linux-amd64.jar")
-                            (string-append out "/core/library/jogl-all-natives-linux-amd64.jar"))
-               (wrap-program (string-append out "/processing")
-                 `("LD_LIBRARY_PATH" ":" prefix (,mesa-libs)))))))))
+             (let* ((out (assoc-ref outputs "out"))
+                    (share (string-append out "/share/" ,name "-" ,version))
+                    (mesa-libs (string-append (assoc-ref inputs "mesa") "/lib"))
+                    (jar-name "jogl-all-natives-linux-amd64.jar")
+                    (unpacked-jar-dir (string-append "guix-" jar-name)))
+               (with-directory-excursion unpacked-jar-dir
+                 (invoke "zip" "-r" (string-append share "/core/library/" jar-name) "."))
+               (delete-file-recursively (string-append share "/" unpacked-jar-dir))
+               (wrap-program (string-append share "/processing")
+                 `("LD_LIBRARY_PATH" ":" prefix (,mesa-libs))))
+             #t)))))
 
     (inputs
      `(("libstdc++" ,(make-libstdc++ gcc))
