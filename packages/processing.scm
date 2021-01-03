@@ -97,13 +97,15 @@
        #:phases
        (modify-phases %standard-phases
 
+         ;; unpack these libraries so they can be referenced in the #:patchelf-plan
          (add-after 'unpack 'unpack-native-libraries-jars
            (lambda _
              (let* ((jar-dir "core/library")
                     (jar-name "jogl-all-natives-linux-amd64.jar")
                     (jar-path (string-append jar-dir "/" jar-name))
                     (unpacked-jar-dir (string-append "guix-" jar-name)))
-               (invoke "unzip" "-d" unpacked-jar-dir jar-path))))
+               (invoke "unzip" "-d" unpacked-jar-dir jar-path))
+             #t))
 
          ;; Find all the binaries that include $ORIGIN in their rpath.
          ;; Save the results to /rpath-origin-components.scm for later use.
@@ -111,34 +113,22 @@
            (lambda* (#:key outputs #:allow-other-keys)
              (use-modules (giuliano108 utils))
 
-             (let ((out (assoc-ref %outputs "out")))
+             (let ((out (assoc-ref outputs "out")))
                (mkdir out)
                (collect-rpath-origin-components out))
              #t))
 
          ;; Fix binaries that included, before the patchelf phase, $ORIGIN in their rpath.
          (add-before 'validate-runpath 'fix-runpath
-           (lambda* (#:key inputs #:allow-other-keys)
+           (lambda* (#:key inputs outputs #:allow-other-keys)
              (use-modules (ice-9 popen))
              (use-modules (ice-9 rdelim))
              (use-modules (ice-9 regex))
              (use-modules (srfi srfi-1))
 
-             (define %out (string-append (assoc-ref %outputs "out") "/share/" ,name "-" ,version))
+             (define %out (string-append (assoc-ref outputs "out") "/share/" ,name "-" ,version))
 
-             (define (get-runpath binary)
-               (read-line (open-pipe (string-append "patchelf --print-rpath " binary) OPEN_READ)))
-
-             (define (fix-origin store-path input-filename origin-rpath-component)
-               (let* ((path (regexp-substitute #f
-                                               (string-match "^\\$ORIGIN" origin-rpath-component)
-                                               'pre
-                                               (string-append store-path "/" (dirname input-filename))
-                                               'post))
-                      (canonicalized-path (canonicalize-path path)))
-                 canonicalized-path))
-
-             (let* ((out (assoc-ref %outputs "out"))
+             (let* ((out (assoc-ref outputs "out"))
                     (rpath-origin-components (read (open-file (string-append out "/rpath-origin-components.scm") "r"))))
                (for-each (lambda (x)
                            (let* ((binary (car x))
