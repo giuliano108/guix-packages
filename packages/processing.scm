@@ -80,7 +80,8 @@
          ("java/lib/amd64/libunpack.so"
           ("gcc:lib"))
 
-         ;; these libs are temporarily extracted from their containing .jar
+         ;; a few libraries are packaged up in a .jar
+         ;; we extract them to a temporary folder so that #:patchelf-plan can fix those too
          ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libnativewindow_x11.so"
           ("libx11" "libxxf86vm" "libxrender"))
          ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libjogl_mobile.so"
@@ -98,10 +99,9 @@
 
          (add-after 'unpack 'unpack-native-libraries-jars
            (lambda _
-             (let* ((out (assoc-ref %outputs "out"))
-                    (jar-dir "core/library")
+             (let* ((jar-dir "core/library")
                     (jar-name "jogl-all-natives-linux-amd64.jar")
-                    (jar-path (string-append "core/library/" jar-name))
+                    (jar-path (string-append jar-dir "/" jar-name))
                     (unpacked-jar-dir (string-append "guix-" jar-name)))
                (invoke "unzip" "-d" unpacked-jar-dir jar-path))))
 
