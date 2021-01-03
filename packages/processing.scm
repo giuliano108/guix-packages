@@ -80,6 +80,7 @@
          ("java/lib/amd64/libunpack.so"
           ("gcc:lib"))
 
+         ;; these libs are temporarily extracted from their containing .jar
          ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libnativewindow_x11.so"
           ("libx11" "libxxf86vm" "libxrender"))
          ("guix-jogl-all-natives-linux-amd64.jar/natives/linux-amd64/libjogl_mobile.so"
@@ -185,13 +186,17 @@
              #t))
 
          (add-after 'fix-runpath 'unpack-native-libraries-jars
-           (lambda _
-             (let* ((out-base (assoc-ref %outputs "out"))
-                    (out (string-append (assoc-ref %outputs "out") "/share/" ,name "-" ,version)))
+           (lambda* (#:key inputs outputs #:allow-other-keys)
+
+             (let* ((out-base (assoc-ref outputs "out"))
+                    (out (string-append out-base "/share/" ,name "-" ,version))
+                    (mesa-libs (string-append (assoc-ref inputs "mesa") "/lib")))
                (with-directory-excursion "guix-jogl-all-natives-linux-amd64.jar"
                  (invoke "zip"  "-r" (string-append out "/jogl-all-natives-linux-amd64.jar") "."))
                (rename-file (string-append out "/jogl-all-natives-linux-amd64.jar")
-                            (string-append out "/core/library/jogl-all-natives-linux-amd64.jar"))))))))
+                            (string-append out "/core/library/jogl-all-natives-linux-amd64.jar"))
+               (wrap-program (string-append out "/processing")
+                 `("LD_LIBRARY_PATH" ":" prefix (,mesa-libs)))))))))
 
     (inputs
      `(("libstdc++" ,(make-libstdc++ gcc))
