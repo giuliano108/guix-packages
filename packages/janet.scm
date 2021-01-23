@@ -8,7 +8,7 @@
 (define-public janet
   (package
     (name "janet")
-    (version "1.9.1")
+    (version "1.14.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -17,7 +17,7 @@
             (file-name (git-file-name name version))
               (sha256
                (base32
-                "1zdiwddnppwg5zrizy2ypd449zj4mivib76h73xhvr1syl7dk7sc"))))
+                "0xsyhy4afnaw5lkys8g56y1vjmsjpbqbn8ysi8k3jq0sixqj93bh"))))
     (build-system meson-build-system)
     (synopsis "A dynamic language and bytecode vm")
     (description
