@@ -5,18 +5,43 @@
 
 (use-modules
   (gnu)
+  (gnu system linux-container)
+  (gnu services shepherd)
   (guix profiles)
   (guix packages)
   (srfi srfi-1))
 
-(use-service-modules networking ssh)
-(use-package-modules screen vim certs)
+(use-service-modules base ssh desktop dbus docker)
+(use-package-modules screen vim certs bash)
+
+(define dummy-networking-service-type
+  (shepherd-service-type
+    'dummy-networking
+    (const (shepherd-service
+	     (documentation "Provide loopback and networking without actually
+			    doing anything.")
+	     (provision '(loopback networking))
+	     (start #~(const #t))))
+    #f
+    (description "dummy networking")))
+
+(define make-cgroup-fs
+  (lambda (name)
+    (file-system
+      (device "cgroup")
+      (mount-point (string-append "/sys/fs/cgroup/" name))
+      (type "cgroup")
+      (check? #f)
+      (options name)
+      (create-mount-point? #t)
+      (mount? #t))))
 
 (define os
 (operating-system
   (host-name "scarpa")
   (timezone "Europe/London")
   (locale "en_US.utf8")
+  (locale-libcs (list glibc glibc-2.29 glibc-2.31))
 
   (kernel hello)  ; dummy package
   (initrd (lambda* (. rest) (plain-file "dummyinitrd" "dummyinitrd")))
@@ -33,16 +58,19 @@
 	  (configuration-file-generator (lambda* (. rest) (computed-file "dummybootloader" #~(mkdir #$output))))
           (installer #~(const #t))))))
 
-  (file-systems (list (file-system
-                        (device "/dev/sdb")
-                        (mount-point "/")
-                        (type "ext4")
-                        (mount? #t))))  ; saying #f here doesn't work :(
+  (file-systems (append
+		  (list (file-system
+			  (device "/dev/sdb")
+			  (mount-point "/")
+			  (type "ext4")
+			  (mount? #t)))  ; saying #f here doesn't work :(
+		  (map make-cgroup-fs  ; more cgroups required by docker
+			(list "hugetlb" "net_cls" "net_prio" "rdma"))))
 
   (users (cons (user-account
                 (name "giuliano")
                 (group "users")
-                (supplementary-groups '("wheel")))
+                (supplementary-groups '("wheel" "docker")))
                %base-user-accounts))
 
   (packages (append (list screen  ; global packages to add
@@ -71,30 +99,15 @@
                 (list 'firmware 'linux-bare-metal)))
       (operating-system-default-essential-services this-operating-system)))
 
-  (services (list (service guix-service-type)))))
-
-; Hackish way to avoid building/including linux-module-database in the system,
-
-(define hooks-modifier
-  (eval '(record-modifier <profile> 'hooks)
-    (resolve-module '(guix profiles))))
-
-(define my-essential-services (operating-system-essential-services os))
-
-(define system-service (car my-essential-services))
-(unless (eq? 'system (service-type-name (service-kind system-service)))
-  (raise-exception "The first essential service is not 'system'"))
-
-
-(define kernel-profile (car (cdr (car (service-value system-service)))))
-(unless (string=? "hello" (manifest-entry-name (car (manifest-entries (profile-content kernel-profile)))))
-  (raise-exception "I was expecting 'hello' as the (dummy) kernel"))
-
-(hooks-modifier kernel-profile '())
-
-(define os
-(operating-system
-  (inherit os)
-  (essential-services my-essential-services)))
+  (services (list (service guix-service-type)
+                  (service dummy-networking-service-type)
+                  (syslog-service)
+                  (service elogind-service-type)
+                  (service dbus-root-service-type)
+		  (service docker-service-type)
+                  (service special-files-service-type
+                         `(("/bin/sh" ,(file-append bash "/bin/sh"))
+                           ("/bin/bash" ,(file-append bash "/bin/bash"))
+                           ("/usr/bin/env" ,(file-append coreutils "/bin/env"))))))))
 
 os
