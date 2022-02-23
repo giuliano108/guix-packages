@@ -1,6 +1,6 @@
 # Guix on WSL2
 
-_(originally a gist [here](https://gist.github.com/giuliano108/49ec5bd0a9339db98535bc793ceb5ab4))_
+_Originally a gist [here](https://gist.github.com/giuliano108/49ec5bd0a9339db98535bc793ceb5ab4). This document applies to Guix 1.3.0. For Guix 1.1.0, check a [previous version](https://github.com/giuliano108/guix-packages/blob/5bb057baf290455b11ab4a748e15c8293d086146/notes/Guix-on-WSL2.md)._
 
 This will show you how to get Guix running on WSL2.
 We're going to go as "minimal" as possible, without starting off one of the readily available WSL2 distros.
@@ -172,11 +172,18 @@ Now that we're in, we can check what WSL (`--import`) added our bare `rootfs.tar
 
 ```
 / # /busybox find / | /busybox grep -v '^.proc\|^.dev\|^.sys'
+find: /usr/lib/wsl/drivers: Value too large for defined data type
 /
 /busybox
 /mnt
 /mnt/wsl
 /mnt/c
+/usr
+/usr/lib
+/usr/lib/wsl
+/usr/lib/wsl/drivers
+find: /usr/lib/wsl/lib: Value too large for defined data type
+/usr/lib/wsl/lib
 /sbin
 /sbin/mount.drvfs
 /bin
@@ -184,13 +191,11 @@ Now that we're in, we can check what WSL (`--import`) added our bare `rootfs.tar
 /run
 /run/WSL
 /run/WSL/7_interop
-/run/WSL/1_interop
 /run/user
 /run/shm
 /run/lock
 /init
 /lost+found
-/
 ```
 
 Despite the `mount` errors in `dmesg`, things look OK:
@@ -302,26 +307,34 @@ C:\134 on /mnt/c type 9p (rw,dirsync,noatime,aname=drvfs;path=C:\;uid=0;gid=0;sy
 Networking works now. If `/busybox wget` properly supported HTTPS, we could use it to download the Guix binary tarball.
 
 ```
-/tmp # /busybox wget https://ftp.gnu.org/gnu/guix/guix-binary-1.1.0.x86_64-linux.tar.xz
+/tmp # /busybox wget https://ftp.gnu.org/gnu/guix/guix-binary-1.3.0.x86_64-linux.tar.xz
 Connecting to ftp.gnu.org (209.51.188.20:443)
 wget: note: TLS certificate validation not implemented
-wget: TLS error from peer (alert code 40): handshake failure
-wget: error getting response: Connection reset by peer
+saving to 'guix-binary-1.3.0.x86_64-linux.tar.xz'
+guix-binary-1.3.0.x8 100% | 86.8M  0:00:00 ETA
+'guix-binary-1.3.0.x86_64-linux.tar.xz' saved
 /tmp #
 ```
 
-Except that it doesn't. Download the tarball with Windows and extract it from `/mnt/c` instead.
+and extract it:
 
 ```
-/ # /busybox tar -C / -xvJf /mnt/c/Users/Giuliano/Downloads/guix-binary-1.1.0.x86_64-linux.tar.xz
+/ # /busybox tar -C / -xvJf /tmp/guix-binary-1.3.0.x86_64-linux.tar.xz
 ```
+
+If `/busybox wget` fails on a TLS error, remember you can download the tarball with Windows and extract it from `/mnt/c` instead, i.e.:
+
+```
+/ # /busybox tar -C / -xvJf /mnt/c/Users/Giuliano/Downloads/guix-binary-1.3.0.x86_64-linux.tar.xz
+```
+
 
 `/gnu` and `/var/guix` are in place:
 
 ```
 / # /busybox ls -ld /gnu /var/guix
-drwxr-xr-x    3 root     root          4096 May  1 21:37 /gnu
-drwxr-xr-x    5 root     root          4096 May  1 21:37 /var/guix
+drwxr-xr-x    3 root     root          4096 Feb 23 22:30 /gnu
+drwxr-xr-x    5 root     root          4096 Feb 23 22:30 /var/guix
 / #
 ```
 
@@ -387,7 +400,7 @@ Now it'd be great if we could get our Guix WSL distro to be more like GuixSD. F.
 
 To achieve that, we're going to try and put together a Guix [System Configuration](https://guix.gnu.org/manual/en/html_node/Using-the-Configuration-System.html#Using-the-Configuration-System) file. A WSL distro, unlike a VM or a bare metal server, doesn't need a lot of the stuff that Guix's [operating-system](https://guix.gnu.org/manual/en/html_node/Using-the-Configuration-System.html#Using-the-Configuration-System) declaration expects. In my configuration file I tried to convince Guix that it's fine to not care about the kernel/bootloader, deal with disks, ...
 
-[`systems/wsl-config.scm`](https://github.com/giuliano108/guix-packages/blob/master/systems/wsl-config.scm) is the hacky/uneducated operating system declaration I'm using. It doesn't include Docker, that's addressed in its own section somewhere below.
+[`systems/wsl-config.scm`](https://github.com/giuliano108/guix-packages/blob/master/systems/wsl-config.scm) is the hacky/uneducated operating system declaration I'm using.
 
 Passing that file to `guix system reconfigure`...
 
@@ -434,8 +447,13 @@ Running the above populates `/run` and starts `shepherd`.
 ~ # . /etc/profile
 ~ # pstree
 init─┬─init───init───busybox─┬─pstree
-     │                       └─shepherd─┬─guix-daemon
-     │                                  ├─nscd───7*[{nscd}]
+     │                       └─shepherd─┬─containerd───10*[{containerd}]
+     │                                  ├─dbus-daemon
+     │                                  ├─dockerd───9*[{dockerd}]
+     │                                  ├─elogind
+     │                                  ├─guix-daemon
+     │                                  ├─syslogd
+     │                                  ├─udevd
      │                                  └─4*[{shepherd}]
      └─{init}
 ~ #
@@ -486,9 +504,9 @@ bash
 Freshly installed:
 
 ```
-bash-5.0# df -h
+bash-5.1# df -h
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb        251G  2.7G  236G   2% /
+/dev/sdc        251G  4.2G  235G   2% /
 ```
 
 ### `/dev/null` turns into a file
@@ -516,52 +534,10 @@ Note that running the fix within Ubuntu, also fixes Guix (if both WSL distros ar
 
 ## Docker
 
-[`systems/wsl-config-docker.scm`](https://github.com/giuliano108/guix-packages/blob/master/systems/wsl-config-docker.scm) is an operating system declaration that also includes Docker. You're going to also need to install the `docker-cli` package in your (non-root) user's Guix profile.
+The [`systems/wsl-config.scm`](https://github.com/giuliano108/guix-packages/blob/master/systems/wsl-config.scm) operating system declaration also includes Docker. You'll just need to install the `docker-cli` package in your (non-root) user's Guix profile to be able to use it.
 
-Shepherd now knows about `dockerd` and `containerd`:
+In some cases, depending on the version of WSL2 and the version of Guix, you might find that some cgroup filesystems have not been mounted. That's because Guix uses static list of cgroups names to know what to mount. For example, at the time of writing `rdma` (which Docker uses) is missing from [the list](https://git.savannah.gnu.org/cgit/guix.git/tree/gnu/system/file-systems.scm?h=39959735e58f32357bbf474bb82a6cf41f803901#n511).
 
-```
-$ sudo herd status
-[..]
-Started:
- + containerd
- + dockerd
-[..]
-```
+To address this issue, I've opted to leave a bunch of potentially redundant cgroup `(filesystem ...)` definitions in [`systems/wsl-config.scm`](https://github.com/giuliano108/guix-packages/blob/master/systems/wsl-config.scm). They might or might not be needed, they might cause shepherd to complain that it `failed to start service 'file-system-/sys/fs/cgroup/$cgroup_name'`, but at least Docker seems to reliably work for me.
 
-`docker pull` works:
-
-```
-$ docker pull hello-world
-Using default tag: latest
-latest: Pulling from library/hello-world
-0e03bdcc26d7: Pull complete
-Digest: sha256:6a65f928fb91fcfbc963f7aa6d57c8eeb426ad9a20c7ee045538ef34847f44f1
-Status: Downloaded newer image for hello-world:latest
-docker.io/library/hello-world:latest
-```
-
-`docker run` does not:
-
-```
-$ docker run hello-world
-docker: Error response from daemon: OCI runtime create failed: container_linux.go:344: starting container process caused "process_linux.go:424: container init caused \"rootfs_linux.go:58: mounting \\\"cgroup\\\" to rootfs \\\"/var/lib/docker/overlay2/42e38e19165ce1c1de6d05525208e834c6597d9cc47273bb33ca93c74fc75c52/merged\\\" at \\\"/sys/fs/cgroup\\\" caused \\\"stat /sys/fs/cgroup/rdma: no such file or directory\\\"\"": unknown.
-ERRO[0000] error waiting for container: context canceled
-```
-
-`/sys/fs/cgroup/rdma` doesn't exist. Can we mount that by hand?
-
-```
-# mkdir /sys/fs/cgroup/rdma
-# mount -t cgroup -o rdma cgroup /sys/fs/cgroup/rdma
-# ls /sys/fs/cgroup/rdma
-cgroup.clone_children  cgroup.sane_behavior  release_agent
-cgroup.procs           notify_on_release     tasks
-```
-
-After `mount -t cgroup ...`, `docker run hello-world` works. Technically, you'll be fine with just the `mkdir` until something tries to actually use the rdma cgroup.
-
-On Ubuntu, all those `/sys/fs/cgroup` are set up by `/usr/bin/cgroupfs-mount`, which just looks at `/proc/cgroups` and mounts everything it finds there.  
-On Guix, `rdma` is missing from the list [here](http://git.savannah.gnu.org/cgit/guix.git/tree/gnu/system/file-systems.scm?h=6dcc17105e1fa86513dc29395a79d789216990b7#n409).
-
-For `/sys/fs/cgroup/rdma` to be automatically mounted at boot, I just added a `(filesystem ...)` to [`systems/wsl-config-docker.scm`](https://github.com/giuliano108/guix-packages/blob/master/systems/wsl-config-docker.scm).
+On Ubuntu, all the `/sys/fs/cgroup` are set up by `/usr/bin/cgroupfs-mount`, which just looks at `/proc/cgroups` and mounts everything it finds there...
