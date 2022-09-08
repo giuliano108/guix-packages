@@ -1,0 +1,11 @@
+root:x:0:0:root:/root:/bin/bash
+guixbuilder01:x:999:999:Guix build user 01:/var/empty:/usr/sbin/nologin
+guixbuilder02:x:998:999:Guix build user 02:/var/empty:/usr/sbin/nologin
+guixbuilder03:x:997:999:Guix build user 03:/var/empty:/usr/sbin/nologin
+guixbuilder04:x:996:999:Guix build user 04:/var/empty:/usr/sbin/nologin
+guixbuilder05:x:995:999:Guix build user 05:/var/empty:/usr/sbin/nologin
+guixbuilder06:x:994:999:Guix build user 06:/var/empty:/usr/sbin/nologin
+guixbuilder07:x:993:999:Guix build user 07:/var/empty:/usr/sbin/nologin
+guixbuilder08:x:992:999:Guix build user 08:/var/empty:/usr/sbin/nologin
+guixbuilder09:x:991:999:Guix build user 09:/var/empty:/usr/sbin/nologin
+guixbuilder10:x:990:999:Guix build user 10:/var/empty:/usr/sbin/nologin

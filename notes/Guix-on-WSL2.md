@@ -19,13 +19,14 @@ _Disclaimer_: I'm a Guix nOOb! (hence going through the trouble of installing it
       * [Installing Guix](#installing-guix)
       * [Let Guix take over](#let-guix-take-over)
       * [Booting the Guix WSL distro as if it were a GuixSD system](#booting-the-guix-wsl-distro-as-if-it-were-a-guixsd-system)
+      * [A script to automate distro creation](#a-script-to-automate-distro-creation)
       * [Misc](#misc)
          * [Can only run one "wsl -d guix" terminal at a time](#can-only-run-one-wsl--d-guix-terminal-at-a-time)
          * [How much disk space does the Guix WSL distro take?](#how-much-disk-space-does-the-guix-wsl-distro-take)
          * [/dev/null turns into a file](#devnull-turns-into-a-file)
       * [Docker](#docker)
 
-<!-- Added by: giuliano, at: Sat 30 May 2020 06:15:27 PM BST -->
+<!-- Added by: giuliano, at: Fri Sep  9 11:52:08 PM BST 2022 -->
 
 <!--te-->
 
@@ -394,6 +395,18 @@ EOM
 
 `guix pull` now works...
 
+While we are at it, let's populate `/etc/nsswitch.conf` too. I don't know how/when but at some point this file disappeared (either WSL or Guix are no longer creating it). Without it, the initial `guix system reconfigure` (see below) fails.
+
+```
+/ # /busybox cat <<EOM >> /etc/nsswitch.conf
+group:  files
+hosts:  files dns [!UNAVAIL=return]
+networks:       files dns [!UNAVAIL=return]
+passwd: files
+shadow: files
+EOM
+```
+
 ## Let Guix take over
 
 Now it'd be great if we could get our Guix WSL distro to be more like GuixSD. F.e., Guix itself should be able to make a "more proper" `/etc/passwd` than the one we manually edited, fix `/etc/services`, ...
@@ -459,6 +472,93 @@ init─┬─init───init───busybox─┬─pstree
 ~ #
 ```
 
+## A script to automate distro creation
+
+This repo contains a [babashka](https://babashka.org/) script that automates 99% of the steps we discussed. Babashka can be installed via scoop (instructions [here](https://github.com/babashka/babashka#scoop)). You can also install GNU tar, which is required too, via `scoop install tar`.
+
+Here's a full example. It creates the `guixtest` WSL distro (the distro name can be changed by editing the script).
+
+```
+C:\Users\Giuliano\Documents\WSL>bb ..\code\guix-packages\scripts\make-wsl2-guix-distro.bb
+Downloading busybox, creating the rootfs and the base WSL distro...
+Downloading guix and unpacking it inside the WSL distro...
+[..]
+./gnu/store/zzkly5rbfvahwqgcs7crz0ilpi7x5g5p-ncurses-6.2/share/terminfo/z/ztx-1-a
+./gnu/store/zzkly5rbfvahwqgcs7crz0ilpi7x5g5p-ncurses-6.2/share/terminfo/z/ztx11
+All done, see what the final steps should be at https://github.com/giuliano108/guix-packages/blob/master/notes/Guix-on-WSL2.md ...
+
+C:\Users\Giuliano\Documents\WSL>wsl -d guixtest --exec /busybox sh
+/mnt/c/Users/Giuliano/Documents/WSL # cd
+~ # . ./guix-initial-bootstrap.sh
+~ # guix pull
+accepted connection from pid 20, user root
+substitute: updating substitutes from 'https://ci.guix.gnu.org'... 100.0%
+Updating channel 'guix' from Git repository at 'https://git.savannah.gnu.org/git/guix.git'...
+[..]
+
+New in this revision:
+  4,536 new packages: a2jmidid, abjad, abjad-ext-ipython, abjad-ext-nauert, abjad-ext-rmakers, ack, adcli,
+    alembic, alfis, alsa-topology-conf, alsa-ucm-conf, android-file-transfer, …
+  5,751 packages upgraded: 0ad-data@0.0.25b-alpha, 0ad@0.0.25b-alpha, 0xffff@0.9, 389-ds-base@1.4.4.17,
+    7kaa@2.15.5, abcl@1.9.0, abiword@3.0.5, ableton-link@3.0.3, abseil-cpp@20220623.1, accountsservice@22.08.8,
+    acl@2.3.1, acpi-call-linux-module@1.2.2, …
+
+hint: Run `guix pull --news' to read all the news.
+
+~ # guix system reconfigure --no-bootloader wsl-config.scm
+[..]
+ module-import-compiled  23KiB                                                367KiB/s 00:00 [##################] 100.0%
+guix system: warning: while talking to shepherd: No such file or directory
+~ #
+~ # ./boot.sh
+WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
+making '/gnu/store/bfb2j1g2nghwd3js0d1d8z31zjmfzr1q-system' the current system...
+WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
+setting up setuid programs in '/run/setuid-programs'...
+populating /etc from /gnu/store/4g5hklznkj700qjnrsn0iljjf6vckrv9-etc...
+WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
+WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
+WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
+error in finalization thread: Success
+bash-5.1# herd status
+Started:
+ + containerd
+ + dbus-system
+ + dockerd
+ + elogind
+ + file-system-/run/systemd
+ + file-system-/run/user
+ + file-system-/sys/fs/cgroup
+ + file-system-/sys/fs/cgroup/blkio
+ + file-system-/sys/fs/cgroup/cpu
+ + file-system-/sys/fs/cgroup/cpuacct
+ + file-system-/sys/fs/cgroup/cpuset
+ + file-system-/sys/fs/cgroup/devices
+ + file-system-/sys/fs/cgroup/elogind
+ + file-system-/sys/fs/cgroup/freezer
+ + file-system-/sys/fs/cgroup/hugetlb
+ + file-system-/sys/fs/cgroup/memory
+ + file-system-/sys/fs/cgroup/net_cls
+ + file-system-/sys/fs/cgroup/net_prio
+ + file-system-/sys/fs/cgroup/perf_event
+ + file-system-/sys/fs/cgroup/pids
+ + file-system-/sys/fs/cgroup/rdma
+ + file-systems
+ + guix-daemon
+ + loopback
+ + root
+ + root-file-system
+ + syslogd
+ + udev
+ + user-file-systems
+ + user-processes
+One-shot:
+ * host-name
+ * user-homes
+bash-5.1#
+```
+
+
 ## Misc
 
 ### Can only run one "wsl -d guix" terminal at a time
@@ -509,7 +609,7 @@ Filesystem      Size  Used Avail Use% Mounted on
 /dev/sdc        251G  4.2G  235G   2% /
 ```
 
-### `/dev/null` turns into a file
+### &nbsp;`/dev/null` turns into a file
 
 At seemingly random times, `/dev/null` goes from being a device, to being a plain file. That upsets a lot of things, like `git` or `tmux`:
 

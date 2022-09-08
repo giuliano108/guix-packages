@@ -1,0 +1,2 @@
+root:x:0:
+guixbuild:x:999:guixbuilder01,guixbuilder02,guixbuilder03,guixbuilder04,guixbuilder05,guixbuilder06,guixbuilder07,guixbuilder08,guixbuilder09,guixbuilder10
