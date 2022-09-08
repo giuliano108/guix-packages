@@ -498,11 +498,6 @@ export GUIX_NEW_SYSTEM=$(/busybox readlink -f /var/guix/profiles/system)
 
 source /etc/profile
 
-# why are these permissions not there in the first place?
-for f in ping su sudo; do
-        chmod 4755 $(readlink -f $(which $f))
-done
-
 su -l giuliano -c tmux
 
 bash
