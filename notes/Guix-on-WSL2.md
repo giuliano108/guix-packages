@@ -587,12 +587,16 @@ export GUIX_NEW_SYSTEM=$(/busybox readlink -f /var/guix/profiles/system)
 /var/guix/profiles/system/profile/bin/guile --no-auto-compile $GUIX_NEW_SYSTEM/boot &
 
 /busybox sleep 3
-source /etc/profile
 
-# why are these permissions not there in the first place?
-for f in ping su sudo; do
-        chmod 4755 $(readlink -f $(which $f))
-done
+# WSL mounts /run with the noexec and nosuid mount flags, preventing the
+# binaries in /run/setuid-programs from being useful. As a workaround, we can
+# copy those binaries to /var/run/setuid-programs and bind-mount on top.
+/busybox rm -rf /var/run/setuid-programs
+/busybox mkdir -p /var/run/setuid-programs
+/busybox cp -p /run/setuid-programs/* /var/run/setuid-programs/
+/busybox mount -o bind /var/run/setuid-programs /run/setuid-programs
+
+source /etc/profile
 
 su -l giuliano -c tmux
 
