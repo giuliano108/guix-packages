@@ -12,13 +12,13 @@
 (define-public spire
   (package
     (name "spire")
-    (version "0.1.0-alpha.17")
+    (version "0.1.2")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/epiccastle/spire/releases/download/v" version "/spire-" version "-linux-amd64.tgz"))
               (sha256
 		(base32
-		  "0jwrq4wh2c96x3zvffj1w94hqxhzfhh7payxxh580rb554iifffn"))))
+		  "1z8ws4hgd5r4gzdh64374cb1x17gyc2lp14x04hnndsiwxgq01zc"))))
     (build-system binary-build-system)
     (supported-systems '("x86_64-linux"))
     (arguments
