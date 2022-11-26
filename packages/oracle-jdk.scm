@@ -121,6 +121,8 @@
          ("bin/jlink"
           ("zlib"))
          ("bin/jcmd"
+          ("zlib"))
+	 ("lib/jspawnhelper"
           ("zlib")))
        #:install-plan
                                         ;`(("." (".") (string-append "share/" ,name "-" ,version)))
@@ -131,21 +133,19 @@
            (lambda* (. rest)
              (use-modules (ice-9 popen))
              (use-modules (ice-9 rdelim))
-             (let ((binaries-to-fix (list "jaotc" "jar" "jarsigner" "java" "javac" "javadoc" "javap" "jcmd" "jconsole" "jdb"
-                                          "jdeprscan" "jdeps" "jfr" "jhsdb" "jimage" "jinfo" "jjs" "jlink" "jmap" "jmod"
-                                          "jpackage" "jps" "jrunscript" "jshell" "jstack" "jstat" "jstatd" "keytool" "rmic"
-                                          "rmid" "rmiregistry" "serialver" "libattach.so" "libawt_headless.so" "libawt.so"
-                                          "libawt_xawt.so" "libextnet.so" "libfontmanager.so" "libinstrument.so" "libjavajpeg.so"
-                                          "libjava.so" "libjawt.so" "libjdwp.so" "libjimage.so" "libjsound.so" "liblcms.so"
-                                          "libmanagement_agent.so" "libmanagement_ext.so" "libmanagement.so" "libmlib_image.so"
-                                          "libnet.so" "libnio.so" "libprefs.so" "librmi.so" "libsctp.so" "libsplashscreen.so"
-                                          "libverify.so" "libzip.so")))
+             (let ((binaries-to-fix (list "bin/jaotc" "bin/jar" "bin/jarsigner" "bin/java" "bin/javac" "bin/javadoc" "bin/javap" "bin/jcmd"
+                                          "bin/jconsole" "bin/jdb" "bin/jdeprscan" "bin/jdeps" "bin/jfr" "bin/jhsdb" "bin/jimage" "bin/jinfo"
+                                          "bin/jjs" "bin/jlink" "bin/jmap" "bin/jmod" "bin/jpackage" "bin/jps" "bin/jrunscript" "bin/jshell"
+                                          "bin/jstack" "bin/jstat" "bin/jstatd" "bin/keytool" "bin/rmic" "bin/rmid" "bin/rmiregistry"
+                                          "bin/serialver" "lib/libattach.so" "lib/libawt_headless.so" "lib/libawt.so" "lib/libawt_xawt.so"
+                                          "lib/libextnet.so" "lib/libfontmanager.so" "lib/libinstrument.so" "lib/libjavajpeg.so" "lib/libjava.so"
+                                          "lib/libjawt.so" "lib/libjdwp.so" "lib/libjimage.so" "lib/libjsound.so" "lib/jspawnhelper"
+                                          "lib/liblcms.so" "lib/libmanagement_agent.so" "lib/libmanagement_ext.so" "lib/libmanagement.so"
+                                          "lib/libmlib_image.so" "lib/libnet.so" "lib/libnio.so" "lib/libprefs.so" "lib/librmi.so"
+                                          "lib/libsctp.so" "lib/libsplashscreen.so" "lib/libverify.so" "lib/libzip.so")))
                (for-each (lambda (binary)
                            (let* ((dest (string-append "share/" ,name "-" ,version))
-                                  (prefix (string-append dest (if (string-contains binary ".so")
-                                                                  "/lib"
-                                                                  "/bin")))
-                                  (file-to-patch (string-join (list %output prefix binary) "/"))
+                                  (file-to-patch (string-join (list %output dest binary) "/"))
                                   (current-runpath (read-line (open-pipe (string-append "patchelf --print-rpath " file-to-patch) OPEN_READ)))
                                   (fixed-runpath (string-append %output "/" dest "/lib:" current-runpath)))
                              (invoke "patchelf" "--set-rpath" fixed-runpath file-to-patch)))
