@@ -3,21 +3,22 @@
 	       #:use-module (guix packages)
 	       #:use-module (guix download)
 	       #:use-module (guix utils)
+               #:use-module (gnu packages base)
+               #:use-module (gnu packages compression)
                #:use-module (gnu packages gcc)
-	       #:use-module (gnu packages compression)
 	       #:use-module (nonguix build-system binary))
 
 
 (define-public babashka
   (package
     (name "babashka")
-    (version "0.1.2")
+    (version "1.1.172")
     (source (origin
               (method url-fetch)
-              (uri (string-append "https://github.com/borkdude/babashka/releases/download/v" version "/babashka-" version "-linux-amd64.zip"))
+              (uri (string-append "https://github.com/borkdude/babashka/releases/download/v" version "/babashka-" version "-linux-amd64.tar.gz"))
               (sha256
                (base32
-                "030dvfwcz8q8im4h0jm9400d8i0fg46crp0r45xcdd48xg47jn1i"))))
+                "10kjaf53i7ggc8p5lcjwnzvp4vaazxhf2ic25lp79x21vhhl9cms"))))
     (build-system binary-build-system)
     (supported-systems '("x86_64-linux" "i686-linux"))
     (arguments
@@ -30,17 +31,18 @@
        (modify-phases %standard-phases
 		      ;; this is required because standard unpack expects
 		      ;; the archive to contain a directory with everything inside it,
-		      ;; while babashka's release .zip only contains the `bb` binary.
+		      ;; while babashka's release .tar.gz only contains the `bb` binary.
 		      (replace 'unpack
 			       (lambda* (#:key inputs #:allow-other-keys)
-					(system* (which "unzip")
+					(system* (which "tar")
+						 "-xf"
 						 (assoc-ref inputs "source"))
 					#t)))))
     (inputs
       `(("libstdc++" ,(make-libstdc++ gcc))
         ("zlib" ,zlib)))
     (native-inputs
-      `(("unzip" ,unzip)))
+      `(("tar" ,tar)))
     (synopsis "A Clojure babushka for the grey areas of Bash")
     (description
       "The main idea behind babashka is to leverage Clojure in places
