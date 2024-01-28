@@ -12,13 +12,13 @@
 (define-public babashka
   (package
     (name "babashka")
-    (version "1.1.172")
+    (version "1.3.188")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://github.com/borkdude/babashka/releases/download/v" version "/babashka-" version "-linux-amd64.tar.gz"))
               (sha256
                (base32
-                "10kjaf53i7ggc8p5lcjwnzvp4vaazxhf2ic25lp79x21vhhl9cms"))))
+                "06gm3m7jw1if08p9h3ar4vqwbdl362c8i6bkbqy9l7z873x5flsk"))))
     (build-system binary-build-system)
     (supported-systems '("x86_64-linux" "i686-linux"))
     (arguments
