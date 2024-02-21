@@ -65,7 +65,7 @@
 			  (type "ext4")
 			  (mount? #t)))  ; saying #f here doesn't work :(
 		  (map make-cgroup-fs  ; more cgroups required by docker
-			(list "hugetlb" "net_cls" "net_prio" "rdma"))))
+			(list "hugetlb" "misc" "net_cls" "net_prio" "rdma"))))
 
   (users (cons (user-account
                 (name "giuliano")
