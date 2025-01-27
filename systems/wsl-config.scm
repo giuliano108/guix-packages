@@ -7,6 +7,7 @@
   (gnu)
   (gnu system linux-container)
   (gnu services shepherd)
+  (gnu packages docker)
   (guix profiles)
   (guix packages)
   (srfi srfi-1))
@@ -41,7 +42,6 @@
   (host-name "scarpa")
   (timezone "Europe/London")
   (locale "en_US.utf8")
-  (locale-libcs (list glibc glibc-2.29 glibc-2.31))
 
   (kernel hello)  ; dummy package
   (initrd (lambda* (. rest) (plain-file "dummyinitrd" "dummyinitrd")))
@@ -74,8 +74,7 @@
                %base-user-accounts))
 
   (packages (append (list screen  ; global packages to add
-                          vim
-			  nss-certs)
+                          vim)
               (remove
                   (lambda (x)
                     (member (package-name x)
@@ -101,10 +100,11 @@
 
   (services (list (service guix-service-type)
                   (service dummy-networking-service-type)
-                  (syslog-service)
+                  (service syslog-service-type)
                   (service elogind-service-type)
                   (service dbus-root-service-type)
 		  (service docker-service-type)
+		  (service containerd-service-type)
                   (service special-files-service-type
                          `(("/bin/sh" ,(file-append bash "/bin/sh"))
                            ("/bin/bash" ,(file-append bash "/bin/bash"))
