@@ -11,12 +11,12 @@ export GUIX_NEW_SYSTEM=$(/busybox readlink -f /var/guix/profiles/system)
 /busybox sleep 3
 
 # WSL mounts /run with the noexec and nosuid mount flags, preventing the
-# binaries in /run/setuid-programs from being useful. As a workaround, we can
-# copy those binaries to /var/run/setuid-programs and bind-mount on top.
-/busybox rm -rf /var/run/setuid-programs
-/busybox mkdir -p /var/run/setuid-programs
-/busybox cp -p /run/setuid-programs/* /var/run/setuid-programs/
-/busybox mount -o bind /var/run/setuid-programs /run/setuid-programs
+# binaries in /run/privileged/bin from being useful. As a workaround, we can
+# copy those binaries to /var/run/privileged/bin and bind-mount on top.
+/busybox rm -rf /var/run/privileged/bin
+/busybox mkdir -p /var/run/privileged/bin
+/busybox cp -p /run/privileged/bin/* /var/run/privileged/bin/
+/busybox mount -o bind /var/run/privileged/bin /run/privileged/bin
 
 source /etc/profile
 

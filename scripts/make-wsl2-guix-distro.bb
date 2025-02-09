@@ -17,8 +17,8 @@
 
 
 (def distro-name "guixtest")
-(def busybox-version "1.31.0")
-(def guix-version "1.3.0")
+(def busybox-version "1.35.0")
+(def guix-version "1.4.0")
 (def etc-passwd (slurp-relative "etc-passwd.txt"))
 (def etc-group (slurp-relative "etc-group.txt"))
 (def etc-services (slurp-relative "etc-services.txt"))
@@ -52,7 +52,7 @@
 
 (defn download-busybox []
   (io/copy
-   (:body (curl/get (str "https://busybox.net/downloads/binaries/" busybox-version "-i686-uclibc/busybox")
+   (:body (curl/get (str "https://busybox.net/downloads/binaries/" busybox-version "-i686-linux-musl/busybox")
                     {:as :bytes
                      :compressed false}))
    (io/file distro-name "rootfs" "busybox")))
@@ -124,8 +124,10 @@
 
   (busybox-write-file etc-services "/etc/services")
   (busybox-write-file guix-initial-bootstrap  "/root/guix-initial-bootstrap.sh")
+  (busybox-exec (s/split "dos2unix -u /root/guix-initial-bootstrap.sh" #" "))
 
   (busybox-write-file boot-script  "/root/boot.sh")
+  (busybox-exec (s/split "dos2unix -u /root/boot.sh" #" "))
   (busybox-exec (s/split "chmod 744 /root/boot.sh" #" "))
   (busybox-write-file wsl-system-config "/root/wsl-config.scm")
   (terminate-distro)

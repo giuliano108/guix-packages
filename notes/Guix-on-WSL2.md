@@ -1,6 +1,6 @@
 # Guix on WSL2
 
-_Originally a gist [here](https://gist.github.com/giuliano108/49ec5bd0a9339db98535bc793ceb5ab4). This document applies to Guix 1.3.0. For Guix 1.1.0, check a [previous version](https://github.com/giuliano108/guix-packages/blob/5bb057baf290455b11ab4a748e15c8293d086146/notes/Guix-on-WSL2.md)._
+_Originally a gist [here](https://gist.github.com/giuliano108/49ec5bd0a9339db98535bc793ceb5ab4). This document applies to Guix 1.4.0. For Guix 1.1.0, check a [previous version](https://github.com/giuliano108/guix-packages/blob/5bb057baf290455b11ab4a748e15c8293d086146/notes/Guix-on-WSL2.md)._
 
 This will show you how to get Guix running on WSL2.
 We're going to go as "minimal" as possible, without starting off one of the readily available WSL2 distros.
@@ -70,7 +70,7 @@ C:\Users\Giuliano\Documents\WSL>mkdir guix
 ```
 (ubuntu) /mnt/c/Users/Giuliano/Documents/WSL/guix $ mkdir rootfs
 (ubuntu) /mnt/c/Users/Giuliano/Documents/WSL/guix $ cd rootfs
-(ubuntu) /mnt/c/Users/Giuliano/Documents/WSL/guix/rootfs $ curl -LO https://busybox.net/downloads/binaries/1.31.0-i686-uclibc/busybox
+(ubuntu) /mnt/c/Users/Giuliano/Documents/WSL/guix/rootfs $ curl -LO https://busybox.net/downloads/binaries/1.35.0-i686-linux-musl/busybox
 (ubuntu) /mnt/c/Users/Giuliano/Documents/WSL/guix/rootfs $ cd ..
 (ubuntu) /mnt/c/Users/Giuliano/Documents/WSL/guix $ tar -C rootfs -cvf rootfs.tar .
 ./
@@ -308,25 +308,25 @@ C:\134 on /mnt/c type 9p (rw,dirsync,noatime,aname=drvfs;path=C:\;uid=0;gid=0;sy
 Networking works now. If `/busybox wget` properly supported HTTPS, we could use it to download the Guix binary tarball.
 
 ```
-/tmp # /busybox wget https://ftp.gnu.org/gnu/guix/guix-binary-1.3.0.x86_64-linux.tar.xz
+/tmp # /busybox wget https://ftp.gnu.org/gnu/guix/guix-bynary-1.4.0.x86_64-linux.tar.xz
 Connecting to ftp.gnu.org (209.51.188.20:443)
 wget: note: TLS certificate validation not implemented
-saving to 'guix-binary-1.3.0.x86_64-linux.tar.xz'
-guix-binary-1.3.0.x8 100% | 86.8M  0:00:00 ETA
-'guix-binary-1.3.0.x86_64-linux.tar.xz' saved
+saving to 'guix-bynary-1.4.0.x86_64-linux.tar.xz'
+guix-bynary-1.4.0.x8 100% | 86.8M  0:00:00 ETA
+'guix-bynary-1.4.0.x86_64-linux.tar.xz' saved
 /tmp #
 ```
 
 and extract it:
 
 ```
-/ # /busybox tar -C / -xvJf /tmp/guix-binary-1.3.0.x86_64-linux.tar.xz
+/ # /busybox tar -C / -xvJf /tmp/guix-bynary-1.4.0.x86_64-linux.tar.xz
 ```
 
 If `/busybox wget` fails on a TLS error, remember you can download the tarball with Windows and extract it from `/mnt/c` instead, i.e.:
 
 ```
-/ # /busybox tar -C / -xvJf /mnt/c/Users/Giuliano/Downloads/guix-binary-1.3.0.x86_64-linux.tar.xz
+/ # /busybox tar -C / -xvJf /mnt/c/Users/Giuliano/Downloads/guix-bynary-1.4.0.x86_64-linux.tar.xz
 ```
 
 
@@ -483,11 +483,13 @@ C:\Users\Giuliano\Documents\WSL>bb ..\code\guix-packages\scripts\make-wsl2-guix-
 Downloading busybox, creating the rootfs and the base WSL distro...
 Downloading guix and unpacking it inside the WSL distro...
 [..]
-./gnu/store/zzkly5rbfvahwqgcs7crz0ilpi7x5g5p-ncurses-6.2/share/terminfo/z/ztx-1-a
-./gnu/store/zzkly5rbfvahwqgcs7crz0ilpi7x5g5p-ncurses-6.2/share/terminfo/z/ztx11
+./var/guix/profiles/per-user/root/current-guix
+./var/guix/profiles/per-user/root/current-guix-1-link
 All done, see what the final steps should be at https://github.com/giuliano108/guix-packages/blob/master/notes/Guix-on-WSL2.md ...
 
 C:\Users\Giuliano\Documents\WSL>wsl -d guixtest --exec /busybox sh
+Processing fstab with mount -a failed.
+
 /mnt/c/Users/Giuliano/Documents/WSL # cd
 ~ # . ./guix-initial-bootstrap.sh
 ~ # guix pull
@@ -495,31 +497,50 @@ accepted connection from pid 20, user root
 substitute: updating substitutes from 'https://ci.guix.gnu.org'... 100.0%
 Updating channel 'guix' from Git repository at 'https://git.savannah.gnu.org/git/guix.git'...
 [..]
-
-New in this revision:
-  4,536 new packages: a2jmidid, abjad, abjad-ext-ipython, abjad-ext-nauert, abjad-ext-rmakers, ack, adcli,
-    alembic, alfis, alsa-topology-conf, alsa-ucm-conf, android-file-transfer, …
-  5,751 packages upgraded: 0ad-data@0.0.25b-alpha, 0ad@0.0.25b-alpha, 0xffff@0.9, 389-ds-base@1.4.4.17,
-    7kaa@2.15.5, abcl@1.9.0, abiword@3.0.5, ableton-link@3.0.3, abseil-cpp@20220623.1, accountsservice@22.08.8,
-    acl@2.3.1, acpi-call-linux-module@1.2.2, …
-
-hint: Run `guix pull --news' to read all the news.
+building /gnu/store/k0k1la0j0v6kh339k6zkpf9bg4npcm7j-guix-36f57d071.drv...
+building CA certificate bundle...
+listing Emacs sub-directories...
+building fonts directory...
+building directory of Info manuals...
+building profile with 1 package...
+building /gnu/store/fllgsfp81rqw03jjbymwdz3qkdmcmk6k-inferior-script.scm.drv...
+building package cache...
+building profile with 1 package...
 
 ~ # guix system reconfigure --no-bootloader wsl-config.scm
 [..]
- module-import-compiled  23KiB                                                367KiB/s 00:00 [##################] 100.0%
+guix system: warning: cannot determine provenance for current system
+[..]
+making '/var/guix/profiles/system-1-link' the current system...
+populating /etc from /gnu/store/f6xzszx5i51wqvma9b5amscqga563wxq-etc...
+setting up privileged programs in '/run/privileged/bin'...
+creating /etc/machine-id...
+Please wait while gathering entropy to generate the key pair;
+this may take time...
+substitute: updating substitutes from 'https://ci.guix.gnu.org'... 100.0%
+0.0 MB will be downloaded
+ module-import-compiled  23KiB                                                417KiB/s 00:00 100.0%
 guix system: warning: while talking to shepherd: No such file or directory
+substitute: updating substitutes from 'https://ci.guix.gnu.org'... 100.0%
+The following derivation will be built:
+  /gnu/store/530bbi0gyxay32rsnnjrzz0r05a0b15x-kexec-load-system.scm.drv
+
+0.2 MB will be downloaded
+ module-import-compiled  179KiB                                               1.5MiB/s 00:00 100.0%
+building /gnu/store/530bbi0gyxay32rsnnjrzz0r05a0b15x-kexec-load-system.scm.drv...
+WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
+guix system: warning: failed to load operating system for kexec: In procedure open-fdes: No such file or directory
 ~ #
 ~ # ./boot.sh
-WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
-making '/gnu/store/bfb2j1g2nghwd3js0d1d8z31zjmfzr1q-system' the current system...
-WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
-setting up setuid programs in '/run/setuid-programs'...
-populating /etc from /gnu/store/4g5hklznkj700qjnrsn0iljjf6vckrv9-etc...
-WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
-WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
-WARNING: (guile-user): imported module (guix build utils) overrides core binding `delete'
-error in finalization thread: Success
+[..]
+Service pam started.
+Starting service dockerd...
+Service pam running with value #t.
+Service pam has been started.
+Service dockerd has been started.
+Service dockerd started.
+The following services could not be started in the background: file-system-/sys/fs/cgroup/rdma file-system-/sys/fs/cgroup/net_prio file-system-/sys/fs/cgroup/net_cls file-system-/sys/fs/cgroup/misc file-system-/sys/fs/cgroup/hugetlb.
+Service dockerd running with value #<<process> id: 2814 command: ("/gnu/store/5ljlzb29jyc2k113lrlpq1rgd0bwnnm1-docker-20.10.27/bin/dockerd" "-p" "/var/run/docker.pid" "--userland-proxy=true" "--userland-proxy-path=/gnu/store/2hz8yairfpd33qx0hcvc4nspxja50mg9-docker-libnetwork-cmd-proxy-20.10-3.3797618/bin/proxy" "--iptables" "--containerd" "/run/containerd/containerd.sock")>.
 bash-5.1# herd status
 Started:
  + containerd
@@ -529,29 +550,24 @@ Started:
  + file-system-/run/systemd
  + file-system-/run/user
  + file-system-/sys/fs/cgroup
- + file-system-/sys/fs/cgroup/blkio
- + file-system-/sys/fs/cgroup/cpu
- + file-system-/sys/fs/cgroup/cpuacct
- + file-system-/sys/fs/cgroup/cpuset
- + file-system-/sys/fs/cgroup/devices
  + file-system-/sys/fs/cgroup/elogind
- + file-system-/sys/fs/cgroup/freezer
  + file-system-/sys/fs/cgroup/hugetlb
- + file-system-/sys/fs/cgroup/memory
+ + file-system-/sys/fs/cgroup/misc
  + file-system-/sys/fs/cgroup/net_cls
  + file-system-/sys/fs/cgroup/net_prio
- + file-system-/sys/fs/cgroup/perf_event
- + file-system-/sys/fs/cgroup/pids
  + file-system-/sys/fs/cgroup/rdma
  + file-systems
  + guix-daemon
  + loopback
+ + pam
  + root
  + root-file-system
  + syslogd
  + udev
  + user-file-systems
  + user-processes
+Running timers:
+ + log-rotation
 One-shot:
  * host-name
  * user-homes
